@@ -10,6 +10,9 @@ import '../global.css';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
+import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
+import '@/global.css';
+
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
@@ -44,11 +47,15 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    
+    <GluestackUIProvider mode="dark">
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>
+    </GluestackUIProvider>
+  
   );
 }
