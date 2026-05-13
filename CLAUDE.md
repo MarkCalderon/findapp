@@ -47,7 +47,7 @@ npx expo start          # start dev server (scan QR for device)
 npx expo run:ios        # run on iOS simulator
 npx expo run:android    # run on Android emulator
 npx tsc --noEmit        # type-check
-npx expo lint           # lint
+npx @biomejs/biome check --write <file>  # lint & format (do NOT use eslint or npx expo lint)
 ```
 
 ## Project Structure

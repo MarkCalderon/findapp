@@ -5,9 +5,16 @@ export interface UserInput {
   transcript: string;
 }
 
-export interface Recommendation {
-  id: string;
+export interface PlaceRecommendation {
   name: string;
+  area: string;
   description: string;
-  tags: string[];
+  cuisineType: string;
+  priceRange: 'budget' | 'moderate' | 'upscale' | 'fine_dining';
+  whyItMatches: string;
+  rating: number;
+  latitude: number;
+  longitude: number;
 }
+
+export type { ParsedTranscript } from '@/src/utils/parseTranscript';
