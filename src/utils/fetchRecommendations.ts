@@ -20,43 +20,6 @@ const RecommendationsResponseSchema = z.object({
   recommendations: z.array(PlaceRecommendationSchema),
 });
 
-const RECOMMENDATIONS_SCHEMA = {
-  type: 'object',
-  properties: {
-    recommendations: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          area: { type: 'string' },
-          description: { type: 'string' },
-          cuisineType: { type: 'string' },
-          priceRange: { type: 'string', enum: ['budget', 'moderate', 'upscale', 'fine_dining'] },
-          whyItMatches: { type: 'string' },
-          rating: { type: 'number' },
-          latitude: { type: 'number' },
-          longitude: { type: 'number' },
-        },
-        required: [
-          'name',
-          'area',
-          'description',
-          'cuisineType',
-          'priceRange',
-          'whyItMatches',
-          'rating',
-          'latitude',
-          'longitude',
-        ],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['recommendations'],
-  additionalProperties: false,
-} as const;
-
 const SYSTEM_PROMPT = `You are a Philippines dining and lifestyle guide. Given structured dining preferences, recommend 4 real, well-known restaurants or food destinations in the Philippines that match.
 
 Context:
@@ -81,7 +44,9 @@ Each recommendation must have:
 - whyItMatches: one short sentence on why it fits this specific request
 - rating: typical rating out of 5 based on general reputation (e.g. 4.3)
 - latitude: approximate GPS latitude of the place
-- longitude: approximate GPS longitude of the place`;
+- longitude: approximate GPS longitude of the place
+
+Output: valid JSON only. No preamble, no post-analysis, no conversational text.`;
 
 export async function fetchRecommendations(
   preferences: ParsedTranscript,
@@ -95,19 +60,12 @@ export async function fetchRecommendations(
 - Summary: ${preferences.summary}`;
 
   const response = await groqClient.chat.completions.create({
-    model: 'openai/gpt-oss-20b',
+    model: 'llama-3.3-70b-versatile',
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userMessage },
     ],
-    response_format: {
-      type: 'json_schema',
-      json_schema: {
-        name: 'place_recommendations',
-        strict: true,
-        schema: RECOMMENDATIONS_SCHEMA,
-      },
-    },
+    response_format: { type: 'json_object' },
     temperature: 0.4,
   });
 
