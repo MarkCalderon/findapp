@@ -1,6 +1,7 @@
 import { useForm } from '@tanstack/react-form';
 import { useRouter } from 'expo-router';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useVoiceRecorder } from '@/src/hooks/useVoiceRecorder';
 import { transcriptValidator } from '@/src/utils/homeForm';
 
 export default function HomeScreen() {
@@ -26,6 +28,15 @@ export default function HomeScreen() {
     },
   });
 
+  const {
+    isRecording,
+    isTranscribing,
+    toggle,
+    error: voiceError,
+  } = useVoiceRecorder((text) =>
+    form.setFieldValue('transcript', (prev) => (prev ? `${prev} ${text}` : text)),
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-neutral-50 dark:bg-neutral-950">
       <KeyboardAvoidingView
@@ -38,7 +49,7 @@ export default function HomeScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="flex-1 justify-center items-center px-6 py-5">
+          <View className="flex-1 items-center justify-center px-6 py-5">
             {/* Header */}
             <View className="mb-8">
               <Text
@@ -66,31 +77,58 @@ export default function HomeScreen() {
                     >
                       <TextInput
                         multiline
+                        editable={!isTranscribing}
                         value={field.state.value}
                         onChangeText={field.handleChange}
                         onBlur={field.handleBlur}
                         placeholder={
-                          "Tell us everything — who's going, what you're craving, the vibe."
+                          isRecording
+                            ? 'Listening...'
+                            : isTranscribing
+                              ? 'Transcribing...'
+                              : "Tell us everything — who's going, what you're craving, the vibe."
                         }
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={isRecording ? '#f97316' : '#9ca3af'}
                         className="p-4 pr-14 text-base leading-relaxed text-neutral-900 dark:text-white"
                         style={{ minHeight: 160, textAlignVertical: 'top' }}
                         accessibilityLabel="Describe your craving"
                       />
-                      {/* TODO: wire up expo-av for voice recording */}
+
                       <Pressable
-                        className="absolute bottom-3 right-3 h-10 w-10 items-center justify-center rounded-full bg-orange-500 shadow-sm"
+                        onPress={toggle}
+                        disabled={isTranscribing}
+                        className="absolute bottom-3 right-3 h-10 w-10 items-center justify-center rounded-full shadow-sm"
+                        style={{
+                          backgroundColor: isRecording
+                            ? '#ef4444'
+                            : isTranscribing
+                              ? '#a3a3a3'
+                              : '#f97316',
+                        }}
                         accessibilityRole="button"
-                        accessibilityLabel="Record voice input"
-                        accessibilityHint="Tap to record what you want to eat"
+                        accessibilityLabel={isRecording ? 'Stop recording' : 'Record voice input'}
+                        accessibilityHint={
+                          isRecording
+                            ? 'Tap to stop and transcribe'
+                            : 'Tap to record what you want to eat'
+                        }
+                        accessibilityState={{ disabled: isTranscribing }}
                       >
-                        <Text className="text-lg">🎤</Text>
+                        {isTranscribing ? (
+                          <ActivityIndicator size="small" color="#ffffff" />
+                        ) : (
+                          <Text className="text-lg">{isRecording ? '⏹' : '🎤'}</Text>
+                        )}
                       </Pressable>
                     </View>
+
                     {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
                       <Text className="text-sm text-red-500 dark:text-red-400">
                         {field.state.meta.errors[0]}
                       </Text>
+                    )}
+                    {voiceError !== null && (
+                      <Text className="text-sm text-red-500 dark:text-red-400">{voiceError}</Text>
                     )}
                   </>
                 )}
@@ -103,7 +141,8 @@ export default function HomeScreen() {
                 })}
               >
                 {({ isSubmitting, transcript }) => {
-                  const disabled = !transcript.trim() || isSubmitting;
+                  const disabled =
+                    !transcript.trim() || isSubmitting || isRecording || isTranscribing;
                   return (
                     <Pressable
                       onPress={form.handleSubmit}
